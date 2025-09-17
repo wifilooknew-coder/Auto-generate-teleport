@@ -1,180 +1,63 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Teleport Script Generator + GUI</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #1e1e2e; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-    textarea, pre, select { width: 90%; max-width: 800px; padding: 10px; margin: 10px 0; border-radius: 8px; border: none; font-family: monospace; }
-    textarea { height: 150px; }
-    button { padding: 10px 20px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-    .generate { background: #4CAF50; color: white; }
-    .copy { background: #2196F3; color: white; }
-    pre { background: #2e2e3e; color: #0f0; white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <h2>Teleport Script Generator + GUI</h2>
+warn("Teleport Script Loaded")
 
-  <p>Paste hasil log dari recorder di bawah:</p>
-  <textarea id="inputLogs" placeholder="[0.00] Vector3.new(0, 5, 0)..."></textarea>
-
-  <label for="delaySelect">Pilih Delay antar Teleport:</label>
-  <select id="delaySelect">
-    <option value="1">Normal (1 detik)</option>
-    <option value="0.1">Cepat (0.1 detik)</option>
-    <option value="0">Super Cepat (0 detik / tiap frame)</option>
-  </select>
-
-  <button class="generate" onclick="generateScript()">Generate Teleport Script</button>
-  <button class="copy" onclick="copyScript()">Copy Script</button>
-
-  <h3>Hasil Script Teleport + GUI:</h3>
-  <pre id="outputScript">// Script akan muncul di sini...</pre>
-
-  <script>
-    function generateScript() {
-      const input = document.getElementById("inputLogs").value.trim();
-      const delay = document.getElementById("delaySelect").value;
-
-      if (!input) {
-        alert("Paste log dulu!");
-        return;
-      }
-
-      // Ambil semua Vector3 dari log
-      const regex = /Vector3\.new\(([^\)]+)\)/g;
-      let match;
-      const coords = [];
-      while ((match = regex.exec(input)) !== null) {
-        coords.push("Vector3.new(" + match[1] + ")");
-      }
-
-      if (coords.length === 0) {
-        alert("Tidak ada Vector3 ditemukan di log!");
-        return;
-      }
-
-      // Buat script teleport + GUI
-      const script = `
-warn("Teleport Script with GUI Loaded")
-
+local TeleportService = game:GetService("TeleportService")
 local player = game.Players.LocalPlayer
 local char = player.Character or player.CharacterAdded:Wait()
 local hrp = char:WaitForChild("HumanoidRootPart")
 
--- Posisi hasil rekaman
-local positions = {
-    ${coords.join(",\n    ")}
+-- Ganti ini ke PlaceId hub game kamu
+local hubPlaceId = 1234567890  
+
+-- Isi koordinat hasil recorder
+local coords = {
+    Vector3.new(0, 5, 0),
+    Vector3.new(50, 5, 0),
+    Vector3.new(100, 5, 0),
 }
 
--- Variabel kontrol
-local running = false
-local minimized = false
-local delay = ${delay} -- delay antar teleport
+-- Delay antar teleport (bisa diganti sesuai hasil generator)
+local delayTime = 1  
 
 -- GUI
-if player.PlayerGui:FindFirstChild("TeleportGui") then
-    player.PlayerGui.TeleportGui:Destroy()
-end
-
 local gui = Instance.new("ScreenGui")
 gui.Name = "TeleportGui"
-gui.Parent = player.PlayerGui
+gui.Parent = player:WaitForChild("PlayerGui")
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 120)
-frame.Position = UDim2.new(0.05, 0, 0.1, 0)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.05, 0, 0.2, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 frame.Active = true
 frame.Draggable = true
 frame.Parent = gui
 
--- Tombol ON/OFF
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0.45, 0, 0.35, 0)
-toggleBtn.Position = UDim2.new(0.05, 0, 0.15, 0)
-toggleBtn.Text = "▶ ON"
-toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-toggleBtn.TextColor3 = Color3.new(1,1,1)
-toggleBtn.Parent = frame
+local startBtn = Instance.new("TextButton")
+startBtn.Size = UDim2.new(0.9, 0, 0.4, 0)
+startBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+startBtn.Text = "▶ Start"
+startBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+startBtn.Parent = frame
 
--- Tombol Minimize
-local miniBtn = Instance.new("TextButton")
-miniBtn.Size = UDim2.new(0.45, 0, 0.35, 0)
-miniBtn.Position = UDim2.new(0.5, 0, 0.15, 0)
-miniBtn.Text = "➖ Minimize"
-miniBtn.BackgroundColor3 = Color3.fromRGB(170, 85, 0)
-miniBtn.TextColor3 = Color3.new(1,1,1)
-miniBtn.Parent = frame
-
--- Tombol Close
 local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0.9, 0, 0.35, 0)
-closeBtn.Position = UDim2.new(0.05, 0, 0.6, 0)
+closeBtn.Size = UDim2.new(0.9, 0, 0.3, 0)
+closeBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
 closeBtn.Text = "❌ Close"
 closeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.Parent = frame
 
--- Fungsi Teleport Loop
-local function teleportLoop()
-    while running do
-        for _, pos in ipairs(positions) do
-            if not running then break end
-            hrp.CFrame = CFrame.new(pos)
-            task.wait(delay)
-        end
-    end
+-- Fungsi jalanin teleport + otomatis ke hub
+local function startTeleport()
+	for i, pos in ipairs(coords) do
+		hrp.CFrame = CFrame.new(pos)
+		task.wait(delayTime)
+	end
+	TeleportService:Teleport(hubPlaceId, player)
 end
 
--- ON/OFF Toggle
-toggleBtn.MouseButton1Click:Connect(function()
-    running = not running
-    if running then
-        toggleBtn.Text = "⏸ OFF"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-        task.spawn(teleportLoop)
-    else
-        toggleBtn.Text = "▶ ON"
-        toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-    end
-end)
-
--- Minimize
-miniBtn.MouseButton1Click:Connect(function()
-    minimized = not minimized
-    if minimized then
-        frame.Size = UDim2.new(0, 220, 0, 40)
-        miniBtn.Text = "➕ Restore"
-        toggleBtn.Visible = false
-        closeBtn.Visible = false
-    else
-        frame.Size = UDim2.new(0, 220, 0, 120)
-        miniBtn.Text = "➖ Minimize"
-        toggleBtn.Visible = true
-        closeBtn.Visible = true
-    end
-end)
-
--- Close
+-- Hubungkan tombol
+startBtn.MouseButton1Click:Connect(startTeleport)
 closeBtn.MouseButton1Click:Connect(function()
-    gui:Destroy()
+	gui:Destroy()
 end)
-`;
-      document.getElementById("outputScript").textContent = script;
-    }
-
-    function copyScript() {
-      const text = document.getElementById("outputScript").textContent;
-      if (!text || text.includes("Script akan muncul")) {
-        alert("Belum ada script untuk dicopy!");
-        return;
-      }
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Script berhasil dicopy!");
-      });
-    }
-  </script>
-</body>
-</html>
