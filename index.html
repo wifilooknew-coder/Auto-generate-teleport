@@ -131,10 +131,7 @@ local function teleportAll()
         task.wait(delayTime)
     end
     if running then
-        local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
-        if humanoid then
-            humanoid.Health = 0 -- Kill diri sendiri di akhir
-        end
+        player:LoadCharacter() -- Respawn karakter di akhir
     end
 end
 
