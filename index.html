@@ -63,10 +63,10 @@ local coords = {
 local delayTime = ${delay}
 local running = false
 
--- GUI
+-- GUI (pakai CoreGui biar nggak hilang pas respawn)
 local gui = Instance.new("ScreenGui")
 gui.Name = "XaaScriptHubGui"
-gui.Parent = player:WaitForChild("PlayerGui")
+gui.Parent = game:GetService("CoreGui")
 
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(0, 280, 0, 180)
@@ -122,6 +122,11 @@ closeBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
 closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 closeBtn.Parent = frame
 
+-- Update HRP setiap respawn
+player.CharacterAdded:Connect(function(char)
+    hrp = char:WaitForChild("HumanoidRootPart")
+end)
+
 -- Teleport Function
 local function teleportAll()
     running = true
@@ -132,7 +137,7 @@ local function teleportAll()
     end
     if running then
         if player.Character then
-            player.Character:BreakJoints() -- bikin mati dulu
+            player.Character:BreakJoints() -- mati dulu
         end
         player:LoadCharacter() -- respawn ulang
     end
