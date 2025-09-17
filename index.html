@@ -1,63 +1,87 @@
-warn("Teleport Script Loaded")
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teleport Script Generator (Auto Rejoin)</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #1e1e1e; color: #fff; text-align: center; padding: 20px; }
+    textarea, pre, select { width: 90%; margin: 10px 0; padding: 10px; border-radius: 8px; }
+    textarea { height: 150px; }
+    button { margin: 5px; padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+    #generate { background: #0078d7; color: white; }
+    #copy { background: #28a745; color: white; }
+    pre { background: #2d2d2d; text-align: left; white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h2>Teleport Script Generator 🚀 (Auto Rejoin)</h2>
+  <p>Tempel log koordinat dari recorder, pilih <b>Speed</b>, lalu klik <b>Generate</b></p>
 
-local TeleportService = game:GetService("TeleportService")
+  <textarea id="input" placeholder="Paste log di sini..."></textarea><br>
+
+  <label for="delay">Pilih Speed:</label><br>
+  <select id="delay">
+    <option value="0.1">⚡ Cepat (0.1s)</option>
+    <option value="0.5">⚖️ Medium (0.5s)</option>
+    <option value="1">🐢 Lambat (1s)</option>
+  </select><br>
+
+  <button id="generate">Generate</button>
+  <button id="copy">Copy Script</button>
+
+  <h3>Hasil Script:</h3>
+  <pre id="output"></pre>
+
+  <script>
+    document.getElementById("generate").onclick = function() {
+      const input = document.getElementById("input").value.trim().split("\n");
+      const delay = document.getElementById("delay").value;
+      const coords = [];
+
+      input.forEach(line => {
+        const match = line.match(/Vector3\.new\(([-\d\.]+), ([-\d\.]+), ([-\d\.]+)\)/);
+        if (match) {
+          coords.push(`Vector3.new(${match[1]}, ${match[2]}, ${match[3]})`);
+        }
+      });
+
+      if (coords.length === 0) {
+        document.getElementById("output").textContent = "-- Tidak ada koordinat valid!";
+        return;
+      }
+
+      const script = `
 local player = game.Players.LocalPlayer
-local char = player.Character or player.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart")
+local hrp = player.Character:WaitForChild("HumanoidRootPart")
 
--- Ganti ini ke PlaceId hub game kamu
-local hubPlaceId = 1234567890  
-
--- Isi koordinat hasil recorder
 local coords = {
-    Vector3.new(0, 5, 0),
-    Vector3.new(50, 5, 0),
-    Vector3.new(100, 5, 0),
+    ${coords.join(",\n    ")}
 }
 
--- Delay antar teleport (bisa diganti sesuai hasil generator)
-local delayTime = 1  
+local delayTime = ${delay} -- detik antar teleport
 
--- GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "TeleportGui"
-gui.Parent = player:WaitForChild("PlayerGui")
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 100)
-frame.Position = UDim2.new(0.05, 0, 0.2, 0)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-frame.Active = true
-frame.Draggable = true
-frame.Parent = gui
-
-local startBtn = Instance.new("TextButton")
-startBtn.Size = UDim2.new(0.9, 0, 0.4, 0)
-startBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
-startBtn.Text = "▶ Start"
-startBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
-startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-startBtn.Parent = frame
-
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0.9, 0, 0.3, 0)
-closeBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
-closeBtn.Text = "❌ Close"
-closeBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
-closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-closeBtn.Parent = frame
-
--- Fungsi jalanin teleport + otomatis ke hub
-local function startTeleport()
-	for i, pos in ipairs(coords) do
-		hrp.CFrame = CFrame.new(pos)
-		task.wait(delayTime)
-	end
-	TeleportService:Teleport(hubPlaceId, player)
+local function teleportAll()
+    for i, pos in ipairs(coords) do
+        hrp.CFrame = CFrame.new(pos)
+        wait(delayTime)
+    end
+    -- Setelah selesai, otomatis rejoin
+    game:GetService("TeleportService"):Teleport(game.PlaceId, player)
 end
 
--- Hubungkan tombol
-startBtn.MouseButton1Click:Connect(startTeleport)
-closeBtn.MouseButton1Click:Connect(function()
-	gui:Destroy()
-end)
+teleportAll()
+`;
+
+      document.getElementById("output").textContent = script.trim();
+    };
+
+    document.getElementById("copy").onclick = function() {
+      const text = document.getElementById("output").textContent;
+      if (!text) return;
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Script berhasil dicopy!");
+      });
+    };
+  </script>
+</body>
+</html>
