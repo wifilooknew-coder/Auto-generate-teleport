@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Teleport Script Generator (Auto Rejoin)</title>
+  <title>Teleport Script Generator (GUI + Auto Rejoin)</title>
   <style>
     body { font-family: Arial, sans-serif; background: #1e1e1e; color: #fff; text-align: center; padding: 20px; }
     textarea, pre, select { width: 90%; margin: 10px 0; padding: 10px; border-radius: 8px; }
@@ -14,7 +14,7 @@
   </style>
 </head>
 <body>
-  <h2>Teleport Script Generator 🚀 (Auto Rejoin)</h2>
+  <h2>Teleport Script Generator 🚀 (GUI + Auto Rejoin)</h2>
   <p>Tempel log koordinat dari recorder, pilih <b>Speed</b>, lalu klik <b>Generate</b></p>
 
   <textarea id="input" placeholder="Paste log di sini..."></textarea><br>
@@ -51,6 +51,7 @@
       }
 
       const script = `
+-- Teleport Script with GUI + Auto Rejoin
 local player = game.Players.LocalPlayer
 local hrp = player.Character:WaitForChild("HumanoidRootPart")
 
@@ -58,18 +59,103 @@ local coords = {
     ${coords.join(",\n    ")}
 }
 
-local delayTime = ${delay} -- detik antar teleport
+local delayTime = ${delay}
+local running = false
 
+-- GUI
+local gui = Instance.new("ScreenGui")
+gui.Name = "TeleportGui"
+gui.Parent = player:WaitForChild("PlayerGui")
+
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 150)
+frame.Position = UDim2.new(0.05, 0, 0.1, 0)
+frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+
+-- Start Button
+local startBtn = Instance.new("TextButton")
+startBtn.Size = UDim2.new(0.4, 0, 0.3, 0)
+startBtn.Position = UDim2.new(0.05, 0, 0.1, 0)
+startBtn.Text = "▶ Start"
+startBtn.BackgroundColor3 = Color3.fromRGB(0, 170, 0)
+startBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+startBtn.Parent = frame
+
+-- Stop Button
+local stopBtn = Instance.new("TextButton")
+stopBtn.Size = UDim2.new(0.4, 0, 0.3, 0)
+stopBtn.Position = UDim2.new(0.55, 0, 0.1, 0)
+stopBtn.Text = "⏹ Stop"
+stopBtn.BackgroundColor3 = Color3.fromRGB(170, 0, 0)
+stopBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+stopBtn.Parent = frame
+
+-- Minimize Button
+local miniBtn = Instance.new("TextButton")
+miniBtn.Size = UDim2.new(0.4, 0, 0.25, 0)
+miniBtn.Position = UDim2.new(0.05, 0, 0.55, 0)
+miniBtn.Text = "📉 Minimize"
+miniBtn.BackgroundColor3 = Color3.fromRGB(0, 85, 170)
+miniBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+miniBtn.Parent = frame
+
+-- Close Button
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0.4, 0, 0.25, 0)
+closeBtn.Position = UDim2.new(0.55, 0, 0.55, 0)
+closeBtn.Text = "❌ Close"
+closeBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+closeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeBtn.Parent = frame
+
+-- Teleport Function
 local function teleportAll()
+    running = true
     for i, pos in ipairs(coords) do
+        if not running then break end
         hrp.CFrame = CFrame.new(pos)
-        wait(delayTime)
+        task.wait(delayTime)
     end
-    -- Setelah selesai, otomatis rejoin
-    game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+    if running then
+        -- Auto Rejoin setelah selesai
+        game:GetService("TeleportService"):Teleport(game.PlaceId, player)
+    end
 end
 
-teleportAll()
+-- Button connections
+startBtn.MouseButton1Click:Connect(function()
+    if not running then
+        task.spawn(teleportAll)
+    end
+end)
+
+stopBtn.MouseButton1Click:Connect(function()
+    running = false
+end)
+
+miniBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+    task.wait(0.2)
+    local restoreBtn = Instance.new("TextButton")
+    restoreBtn.Size = UDim2.new(0, 100, 0, 30)
+    restoreBtn.Position = UDim2.new(0.05, 0, 0.05, 0)
+    restoreBtn.Text = "🔼 Show GUI"
+    restoreBtn.BackgroundColor3 = Color3.fromRGB(0, 85, 170)
+    restoreBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    restoreBtn.Parent = gui
+    restoreBtn.MouseButton1Click:Connect(function()
+        frame.Visible = true
+        restoreBtn:Destroy()
+    end)
+end)
+
+closeBtn.MouseButton1Click:Connect(function()
+    running = false
+    gui:Destroy()
+end)
 `;
 
       document.getElementById("output").textContent = script.trim();
