@@ -131,7 +131,10 @@ local function teleportAll()
         task.wait(delayTime)
     end
     if running then
-        player:LoadCharacter() -- Respawn karakter di akhir
+        if player.Character then
+            player.Character:BreakJoints() -- bikin mati dulu
+        end
+        player:LoadCharacter() -- respawn ulang
     end
 end
 
