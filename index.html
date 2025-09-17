@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Teleport Script Generator</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #1e1e2e; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+    textarea, pre { width: 90%; max-width: 800px; padding: 10px; margin: 10px 0; border-radius: 8px; border: none; font-family: monospace; }
+    textarea { height: 150px; }
+    button { padding: 10px 20px; margin: 5px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
+    .generate { background: #4CAF50; color: white; }
+    .copy { background: #2196F3; color: white; }
+    pre { background: #2e2e3e; color: #0f0; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>Teleport Script Generator</h2>
+
+  <p>Paste hasil log dari recorder di bawah:</p>
+  <textarea id="inputLogs" placeholder="[0.00] Vector3.new(0, 5, 0)..."></textarea>
+
+  <button class="generate" onclick="generateScript()">Generate Teleport Script</button>
+  <button class="copy" onclick="copyScript()">Copy Script</button>
+
+  <h3>Hasil Script Teleport:</h3>
+  <pre id="outputScript">// Script akan muncul di sini...</pre>
+
+  <script>
+    function generateScript() {
+      const input = document.getElementById("inputLogs").value.trim();
+      if (!input) {
+        alert("Paste log dulu!");
+        return;
+      }
+
+      // Ambil semua Vector3 dari log
+      const regex = /Vector3\.new\(([^\)]+)\)/g;
+      let match;
+      const coords = [];
+      while ((match = regex.exec(input)) !== null) {
+        coords.push("Vector3.new(" + match[1] + ")");
+      }
+
+      if (coords.length === 0) {
+        alert("Tidak ada Vector3 ditemukan di log!");
+        return;
+      }
+
+      // Buat script teleport
+      const script = `
+warn("Teleport Script Loaded")
+
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local hrp = char:WaitForChild("HumanoidRootPart")
+
+local positions = {
+    ${coords.join(",\n    ")}
+}
+
+for i, pos in ipairs(positions) do
+    task.wait(1) -- delay antar teleport
+    hrp.CFrame = CFrame.new(pos)
+end
+`;
+      document.getElementById("outputScript").textContent = script;
+    }
+
+    function copyScript() {
+      const text = document.getElementById("outputScript").textContent;
+      if (!text || text.includes("Script akan muncul")) {
+        alert("Belum ada script untuk dicopy!");
+        return;
+      }
+      navigator.clipboard.writeText(text).then(() => {
+        alert("Script berhasil dicopy!");
+      });
+    }
+  </script>
+</body>
+</html>
